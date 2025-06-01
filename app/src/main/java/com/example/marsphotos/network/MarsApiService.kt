@@ -16,18 +16,42 @@
 
 package com.example.marsphotos.network
 
-import com.example.marsphotos.model.MarsPhoto
+
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
 
 /**
  * A public interface that exposes the [getPhotos] method
  */
+private const val BASE_URL = "https://android-kotlin-fun-mars-server.appspot.com"
+
+@OptIn(ExperimentalSerializationApi::class)
+private val json = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+    isLenient = true
+    explicitNulls = false
+}
+
+private val retrofit = Retrofit.Builder()
+    .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+    .baseUrl(BASE_URL)
+    .build()
+
 interface MarsApiService {
-    /**
-     * Returns a [List] of [MarsPhoto] and this method can be called from a Coroutine.
-     * The @GET annotation indicates that the "photos" endpoint will be requested with the GET
-     * HTTP method
-     */
     @GET("photos")
     suspend fun getPhotos(): List<MarsPhoto>
+}
+
+object MarsApi {
+    val retrofitService: MarsApiService by lazy {
+        retrofit.create(MarsApiService::class.java)
+    }
 }
